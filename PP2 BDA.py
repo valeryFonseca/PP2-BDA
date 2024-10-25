@@ -393,3 +393,133 @@ def main():
 
 if __name__ == "__main__":
     main()
+# CRUD para Aplicación
+def crud_aplicacion():
+    st.subheader("CRUD Aplicación")
+    acciones = ["Crear Aplicación", "Leer Aplicaciones", "Actualizar Aplicación", "Eliminar Aplicación"]
+    accion = st.selectbox("Selecciona una acción", acciones)
+
+    if accion == "Crear Aplicación":
+        agregar_aplicacion()
+    elif accion == "Leer Aplicaciones":
+        listar_aplicaciones()
+    elif accion == "Actualizar Aplicación":
+        actualizar_aplicacion()
+    elif accion == "Eliminar Aplicación":
+        eliminar_aplicacion()
+
+# CRUD para Desarrollador
+def crud_desarrollador():
+    st.subheader("CRUD Desarrollador")
+    acciones = ["Crear Desarrollador", "Leer Desarrolladores", "Actualizar Desarrollador", "Eliminar Desarrollador"]
+    accion = st.selectbox("Selecciona una acción", acciones)
+
+    if accion == "Crear Desarrollador":
+        nombre_dev = st.text_input("Nombre del Desarrollador")
+        if st.button("Crear Desarrollador"):
+            query = f"CREATE (d:Desarrollador {{name: '{nombre_dev}'}})"
+            run_query(query)
+            st.success(f"Desarrollador '{nombre_dev}' creado con éxito.")
+    elif accion == "Leer Desarrolladores":
+        query = "MATCH (d:Desarrollador) RETURN d.name AS Nombre"
+        resultados = run_query(query)
+        st.write(pd.DataFrame(resultados))
+    elif accion == "Actualizar Desarrollador":
+        nombre_dev = st.text_input("Nombre del Desarrollador a actualizar")
+        nuevo_nombre = st.text_input("Nuevo nombre")
+        if st.button("Actualizar Desarrollador"):
+            query = f"MATCH (d:Desarrollador {{name: '{nombre_dev}'}}) SET d.name = '{nuevo_nombre}'"
+            run_query(query)
+            st.success(f"Desarrollador '{nombre_dev}' actualizado a '{nuevo_nombre}'")
+    elif accion == "Eliminar Desarrollador":
+        nombre_dev = st.text_input("Nombre del Desarrollador a eliminar")
+        if st.button("Eliminar Desarrollador"):
+            query = f"MATCH (d:Desarrollador {{name: '{nombre_dev}'}}) DELETE d"
+            run_query(query)
+            st.success(f"Desarrollador '{nombre_dev}' eliminado con éxito.")
+
+# CRUD para Ubicación
+def crud_ubicacion():
+    st.subheader("CRUD Ubicación")
+    acciones = ["Crear Ubicación", "Leer Ubicaciones", "Actualizar Ubicación", "Eliminar Ubicación"]
+    accion = st.selectbox("Selecciona una acción", acciones)
+
+    if accion == "Crear Ubicación":
+        nombre_ubic = st.text_input("Nombre de la Ubicación")
+        if st.button("Crear Ubicación"):
+            query = f"CREATE (l:Ubicacion {{nombre: '{nombre_ubic}'}})"
+            run_query(query)
+            st.success(f"Ubicación '{nombre_ubic}' creada con éxito.")
+    elif accion == "Leer Ubicaciones":
+        query = "MATCH (l:Ubicacion) RETURN l.nombre AS Nombre"
+        resultados = run_query(query)
+        st.write(pd.DataFrame(resultados))
+    elif accion == "Actualizar Ubicación":
+        nombre_ubic = st.text_input("Nombre de la Ubicación a actualizar")
+        nuevo_nombre = st.text_input("Nuevo nombre")
+        if st.button("Actualizar Ubicación"):
+            query = f"MATCH (l:Ubicacion {{nombre: '{nombre_ubic}'}}) SET l.nombre = '{nuevo_nombre}'"
+            run_query(query)
+            st.success(f"Ubicación '{nombre_ubic}' actualizada a '{nuevo_nombre}'")
+    elif accion == "Eliminar Ubicación":
+        nombre_ubic = st.text_input("Nombre de la Ubicación a eliminar")
+        if st.button("Eliminar Ubicación"):
+            query = f"MATCH (l:Ubicacion {{nombre: '{nombre_ubic}'}}) DELETE l"
+            run_query(query)
+            st.success(f"Ubicación '{nombre_ubic}' eliminada con éxito.")
+
+# CRUD para Tecnología
+def crud_tecnologia():
+    st.subheader("CRUD Tecnología")
+    acciones = ["Crear Tecnología", "Leer Tecnologías", "Actualizar Tecnología", "Eliminar Tecnología"]
+    accion = st.selectbox("Selecciona una acción", acciones)
+
+    if accion == "Crear Tecnología":
+        nombre_tec = st.text_input("Nombre de la Tecnología")
+        if st.button("Crear Tecnología"):
+            query = f"CREATE (t:Tecnologia {{name: '{nombre_tec}'}})"
+            run_query(query)
+            st.success(f"Tecnología '{nombre_tec}' creada con éxito.")
+    elif accion == "Leer Tecnologías":
+        query = "MATCH (t:Tecnologia) RETURN t.name AS Nombre"
+        resultados = run_query(query)
+        st.write(pd.DataFrame(resultados))
+    elif accion == "Actualizar Tecnología":
+        nombre_tec = st.text_input("Nombre de la Tecnología a actualizar")
+        nuevo_nombre = st.text_input("Nuevo nombre")
+        if st.button("Actualizar Tecnología"):
+            query = f"MATCH (t:Tecnologia {{name: '{nombre_tec}'}}) SET t.name = '{nuevo_nombre}'"
+            run_query(query)
+            st.success(f"Tecnología '{nombre_tec}' actualizada a '{nuevo_nombre}'")
+    elif accion == "Eliminar Tecnología":
+        nombre_tec = st.text_input("Nombre de la Tecnología a eliminar")
+        if st.button("Eliminar Tecnología"):
+            query = f"MATCH (t:Tecnologia {{name: '{nombre_tec}'}}) DELETE t"
+            run_query(query)
+            st.success(f"Tecnología '{nombre_tec}' eliminada con éxito.")
+
+
+# Integrar el submenú en la interfaz principal
+def main():
+    st.title("Sistema de Gestión de Competencia Gemini - Neo4j")
+    
+    menu_principal = [
+        "CRUD Aplicación", 
+        "CRUD Desarrollador", 
+        "CRUD Ubicación", 
+        "CRUD Tecnología",
+    ]
+    
+    seleccion_principal = st.sidebar.selectbox("Selecciona una opción", menu_principal)
+    
+    if seleccion_principal == "CRUD Aplicación":
+        crud_aplicacion()
+    elif seleccion_principal == "CRUD Desarrollador":
+        crud_desarrollador()
+    elif seleccion_principal == "CRUD Ubicación":
+        crud_ubicacion()
+    elif seleccion_principal == "CRUD Tecnología":
+        crud_tecnologia()
+
+if __name__ == "__main__":
+    main()
