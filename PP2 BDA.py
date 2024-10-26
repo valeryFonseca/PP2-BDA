@@ -207,11 +207,12 @@ def aplicaciones_por_region():
     if st.button("Buscar Aplicaciones"):
         if region:
             query = f"""
-            MATCH (d:Desarrollador)-[:UBICADO_EN]->(l:Ubicacion {{nombre: '{region}'}})-[:CREA]->(a:Aplicacion)
+            MATCH (l:Ubicacion {{nombre: '{region}'}})<-[:UBICADO_EN]-(d:Desarrollador)-[:CREA]->(a:Aplicacion)
             RETURN a.name AS Aplicacion, l.nombre AS Region
             """
             resultados = run_query(query)
             if resultados:
+                st.write(f"Aplicaciones encontradas para la región '{region}':")
                 for record in resultados:
                     st.write(f"Aplicación: {record['Aplicacion']}, Región: {record['Region']}")
             else:
@@ -219,18 +220,24 @@ def aplicaciones_por_region():
         else:
             st.error("Por favor ingresa una región.")
 
+
 # "Operaciones de Base de Datos"
 
 # "Limpiar Base de Datos"
 
 def limpiar_base_datos():
     st.subheader("Eliminar Todo de la Base de Datos")
-    
+
+    # Verificar que la conexión está activa
+    if not st.session_state.get('neo4j_conn'):
+        st.error("No hay conexión activa a la base de datos. Por favor, verifica la conexión.")
+        return
+
+    # Solicitar confirmación usando una casilla de verificación
+    confirmar_eliminacion = st.checkbox("Confirmo que deseo eliminar todos los nodos y relaciones de la base de datos")
+
     if st.button("Eliminar Todos los Nodos y Relaciones"):
-        # Confirmación adicional antes de realizar la operación
-        confirmacion = st.radio("¿Estás seguro de eliminar todos los nodos y relaciones?", ("No", "Sí"))
-        
-        if confirmacion == "Sí":
+        if confirmar_eliminacion:
             try:
                 query = "MATCH (n) DETACH DELETE n"
                 run_query(query)
@@ -238,10 +245,37 @@ def limpiar_base_datos():
             except Exception as e:
                 st.error(f"Error al limpiar la base de datos: {str(e)}")
         else:
-            st.info("Eliminación de todos los nodos y relaciones cancelada.")
+            st.info("Debes confirmar la eliminación marcando la casilla.")
+
+
+def mostrar_toda_la_informacion():
+    st.subheader("Información de las Aplicaciones Cargadas")
+    
+    if st.button("Mostrar la Tabla"):
+        # Consulta para obtener los detalles de cada aplicación, junto con tecnologías, desarrolladores y ubicaciones
+        query = """
+        MATCH (a:Aplicacion)
+        OPTIONAL MATCH (a)-[:USA]->(t:Tecnologia)
+        OPTIONAL MATCH (d:Desarrollador)-[:CREA]->(a)
+        OPTIONAL MATCH (d)-[:UBICADO_EN]->(l:Ubicacion)
+        RETURN a.name AS Aplicacion, 
+               a.descripcion AS Descripcion, 
+               collect(DISTINCT t.name) AS Tecnologias, 
+               collect(DISTINCT d.name) AS Desarrolladores, 
+               collect(DISTINCT l.nombre) AS Ubicaciones
+        """
+        
+        resultados = run_query(query)
+        
+        if resultados:
+            # Crear un DataFrame a partir de los resultados y mostrarlo en la tabla
+            df = pd.DataFrame(resultados)
+            st.dataframe(df)
+        else:
+            st.warning("No se encontró información en la base de datos.")
+
 
 # "Cargar Datos desde CSV"
-
 def cargar_datos_csv():
     st.subheader("Cargar Datos desde CSV")
     file = st.file_uploader("Sube un archivo CSV", type=["csv"])
@@ -253,73 +287,70 @@ def cargar_datos_csv():
         if st.button("Cargar en Neo4j"):
             for _, row in data.iterrows():
                 # Normalización de nombres en alfabeto romano y manejo de mayúsculas
-                nombre_app = str(row['Title']).lower() if pd.notna(row['Title']) else 'null'
-                descripcion_app = str(row['What it Does']).lower() if pd.notna(row['What it Does']) else 'null'
-                
-                
-                # Escapar comillas y caracteres especiales 
-                nombre_app_escaped = json.dumps(nombre_app)
-                descripcion_app_escaped = json.dumps(descripcion_app)
+                nombre_app = str(row['Title']).lower() if pd.notna(row['Title']) and row['Title'].strip() else None
+                descripcion_app = str(row['What it Does']).lower() if pd.notna(row['What it Does']) and row['What it Does'].strip() else None
 
-                
-                # Crear nodo Aplicacion con todos los atributos relevantes
-                query_app = f"""
-                CREATE (a:Aplicacion {{
-                    name: {nombre_app_escaped}, 
-                    descripcion: {descripcion_app_escaped}
-                }})
-                """
-                run_query(query_app)
-
-                # Crear nodos de Desarrolladores y normalizar nombres (alfabeto romano)
-                desarrolladores = [dev.strip().lower() for dev in str(row['By']).replace('&', ',').split(',') if dev.strip()] if pd.notna(row['By']) else ['null']
-                for dev in desarrolladores:
-                    # Validar que el nombre del desarrollador esté en alfabeto romano
-                    if dev.isascii():
-                        dev_escaped = json.dumps(dev)  # Escapar caracteres especiales
-                        query_dev = f"MERGE (d:Desarrollador {{name: {dev_escaped}}})"
-                        run_query(query_dev)
-
-                        # Relacionar desarrollador con la aplicación
-                        query_rel = f"""
-                        MATCH (d:Desarrollador {{name: {dev_escaped}}}), (a:Aplicacion {{name: {nombre_app_escaped}}})
-                        CREATE (d)-[:CREA]->(a)
-                        """
-                        run_query(query_rel)
-
-                # Crear nodos de Tecnologias (una tecnología por nodo)
-                tecnologias = [tech.strip().lower() for tech in str(row['Built With']).split(',')] if pd.notna(row['Built With']) else ['null']
-                for tech in tecnologias:
-                    tech_escaped = json.dumps(tech)
-
-                    # Crear el nodo de la tecnología y la relación con la aplicación
-                    query_tec = f"""
-                    MERGE (t:Tecnologia {{name: {tech_escaped}}})
+                # Crear nodo Aplicacion solo si hay nombre de la aplicación
+                if nombre_app:
+                    nombre_app_escaped = json.dumps(nombre_app)
+                    descripcion_app_escaped = json.dumps(descripcion_app) if descripcion_app else "null"
+                    
+                    query_app = f"""
+                    CREATE (a:Aplicacion {{
+                        name: {nombre_app_escaped}, 
+                        descripcion: {descripcion_app_escaped}
+                    }})
                     """
-                    run_query(query_tec)
+                    run_query(query_app)
 
-                    # Relacionar la aplicación con la tecnología
-                    query_rel_tec = f"""
-                    MATCH (a:Aplicacion {{name: {nombre_app_escaped}}}), (t:Tecnologia {{name: {tech_escaped}}})
-                    CREATE (a)-[:USA]->(t)
-                    """
-                    run_query(query_rel_tec)
+                    # Crear nodos de Desarrolladores y normalizar nombres (alfabeto romano)
+                    if pd.notna(row['By']):
+                        desarrolladores = [dev.strip().lower() for dev in str(row['By']).replace('&', ',').split(',') if dev.strip()]
+                        for dev in desarrolladores:
+                            if dev.isascii():
+                                dev_escaped = json.dumps(dev)
+                                query_dev = f"MERGE (d:Desarrollador {{name: {dev_escaped}}})"
+                                run_query(query_dev)
 
-                # Crear nodo Ubicacion y relacionarlo con el Desarrollador
-                ubicacion = str(row['Location']).lower() if pd.notna(row['Location']) else 'null'
-                ubicacion_escaped = json.dumps(ubicacion)  # Escapar caracteres especiales
-                query_ubicacion = f"MERGE (l:Ubicacion {{nombre: {ubicacion_escaped}}})"
-                run_query(query_ubicacion)
+                                # Relacionar desarrollador con la aplicación
+                                query_rel = f"""
+                                MATCH (d:Desarrollador {{name: {dev_escaped}}}), (a:Aplicacion {{name: {nombre_app_escaped}}})
+                                CREATE (d)-[:CREA]->(a)
+                                """
+                                run_query(query_rel)
 
-                for dev in desarrolladores:
-                    if dev.isascii():
-                        query_rel_ubic = f"""
-                        MATCH (d:Desarrollador {{name: {json.dumps(dev)}}}), (l:Ubicacion {{nombre: {ubicacion_escaped}}})
-                        CREATE (d)-[:UBICADO_EN]->(l)
-                        """
-                        run_query(query_rel_ubic)
+                    # Crear nodos de Tecnologias (una tecnología por nodo)
+                    if pd.notna(row['Built With']):
+                        tecnologias = [tech.strip().lower() for tech in str(row['Built With']).split(',') if tech.strip()]
+                        for tech in tecnologias:
+                            tech_escaped = json.dumps(tech)
+                            query_tec = f"MERGE (t:Tecnologia {{name: {tech_escaped}}})"
+                            run_query(query_tec)
+
+                            # Relacionar la aplicación con la tecnología
+                            query_rel_tec = f"""
+                            MATCH (a:Aplicacion {{name: {nombre_app_escaped}}}), (t:Tecnologia {{name: {tech_escaped}}})
+                            CREATE (a)-[:USA]->(t)
+                            """
+                            run_query(query_rel_tec)
+
+                    # Crear nodo Ubicacion y relacionarlo con el Desarrollador si hay ubicación
+                    if pd.notna(row['Location']) and row['Location'].strip():
+                        ubicacion = str(row['Location']).lower()
+                        ubicacion_escaped = json.dumps(ubicacion)
+                        query_ubicacion = f"MERGE (l:Ubicacion {{nombre: {ubicacion_escaped}}})"
+                        run_query(query_ubicacion)
+
+                        for dev in desarrolladores:
+                            if dev.isascii():
+                                query_rel_ubic = f"""
+                                MATCH (d:Desarrollador {{name: {json.dumps(dev)}}}), (l:Ubicacion {{nombre: {ubicacion_escaped}}})
+                                CREATE (d)-[:UBICADO_EN]->(l)
+                                """
+                                run_query(query_rel_ubic)
 
             st.success("Datos cargados correctamente con nodos y relaciones.")
+
 
 # "Cerrar Conexión"
 
@@ -567,7 +598,6 @@ def leer_relacion_usa():
         st.warning("No se encontraron relaciones 'USA'.")
 
 
-
 def actualizar_relacion_usa():
     st.subheader("Actualizar Relación 'USA' entre Aplicación y Tecnología")
     nombre_app = st.text_input("Nombre de la Aplicación")
@@ -585,6 +615,7 @@ def actualizar_relacion_usa():
             st.success(f"Relación 'USA' actualizada de '{nombre_tec_anterior}' a '{nombre_tec_nueva}' con éxito.")
         else:
             st.error("Por favor ingresa todos los datos.")
+
 
 def eliminar_relacion_usa():
     st.subheader("Eliminar Relación 'USA'")
@@ -647,6 +678,7 @@ def leer_relacion_crea():
     else:
         st.warning("No se encontraron relaciones 'CREA'.")
 
+
 def actualizar_relacion_crea():
     st.subheader("Actualizar Relación 'CREA' entre Desarrollador y Aplicación")
     nombre_dev = st.text_input("Nombre del Desarrollador")
@@ -665,6 +697,7 @@ def actualizar_relacion_crea():
         else:
             st.error("Por favor ingresa todos los datos.")
 
+
 def eliminar_relacion_crea():
     st.subheader("Eliminar Relación 'CREA' entre Desarrollador y Aplicación")
     nombre_dev = st.text_input("Nombre del Desarrollador")
@@ -681,9 +714,9 @@ def eliminar_relacion_crea():
         else:
             st.error("Por favor ingresa el nombre del desarrollador y la aplicación.")
 
+
 # Relacion UBICADO_EN:
 # Crea, lee, actualiza y elimana relacion UBICADO_EN
-
 def agregar_relacion_ubicacion_en():
     st.subheader("Agregar Relación 'UBICADO_EN' entre Desarrollador y Ubicación")
     nombre_dev = st.text_input("Nombre del Desarrollador")
@@ -935,11 +968,13 @@ def submenu_consultas():
 
 def submenu_operaciones():
     st.subheader("Operaciones de Base de Datos")
-    opciones_operaciones = ["Cargar Datos desde CSV", "Limpiar Base de Datos", "Cerrar Conexión"]
+    opciones_operaciones = ["Cargar Datos desde CSV","Mostrar la Información", "Limpiar Base de Datos", "Cerrar Conexión"]
     seleccion_operacion = st.selectbox("Selecciona una Operación", opciones_operaciones)
     
     if seleccion_operacion == "Cargar Datos desde CSV":
         cargar_datos_csv()
+    elif seleccion_operacion == "Mostrar la Información":
+        mostrar_toda_la_informacion()
     elif seleccion_operacion == "Limpiar Base de Datos":
         limpiar_base_datos()
     elif seleccion_operacion == "Cerrar Conexión":
