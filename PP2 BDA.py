@@ -201,41 +201,60 @@ def cargar_datos_csv():
 
         if st.button("Cargar en Neo4j"):
             for _, row in data.iterrows():
-                # Crear nodo Aplicacion sin limitar el tamaño y manejando caracteres especiales
-                nombre_app = row['Title'] if pd.notna(row['Title']) else 'Null'
-                descripcion_app = row['What it Does'] if pd.notna(row['What it Does']) else 'Null'
+                # Normalización de nombres en alfabeto romano y manejo de mayúsculas
+                nombre_app = str(row['Title']).lower() if pd.notna(row['Title']) else 'null'
+                descripcion_app = str(row['What it Does']).lower() if pd.notna(row['What it Does']) else 'null'
+                subtitulo_app = str(row['Sub-Title']).lower() if pd.notna(row['Sub-Title']) else 'null'
+                youtube_link = str(row['YouTube Link']) if pd.notna(row['YouTube Link']) else 'null'
+                project_link = str(row['Project Link']) if pd.notna(row['Project Link']) else 'null'
                 
-                # Utilizamos json.dumps para escapar correctamente cualquier carácter especial
+                # Escapar comillas y caracteres especiales 
                 nombre_app_escaped = json.dumps(nombre_app)
                 descripcion_app_escaped = json.dumps(descripcion_app)
+                subtitulo_app_escaped = json.dumps(subtitulo_app)
+                youtube_link_escaped = json.dumps(youtube_link)
+                project_link_escaped = json.dumps(project_link)
                 
+                # Crear nodo Aplicacion con todos los atributos relevantes
                 query_app = f"""
-                CREATE (a:Aplicacion {{name: {nombre_app_escaped}, descripcion: {descripcion_app_escaped}}})
+                CREATE (a:Aplicacion {{
+                    name: {nombre_app_escaped}, 
+                    descripcion: {descripcion_app_escaped},
+                    subtitulo: {subtitulo_app_escaped},
+                    youtube_link: {youtube_link_escaped},
+                    project_link: {project_link_escaped}
+                }})
                 """
                 run_query(query_app)
 
-                # Crear nodos de Desarrolladores
-                desarrolladores = [dev.strip() for dev in str(row['By']).split(',')] if pd.notna(row['By']) else ['Null']
+                # Crear nodos de Desarrolladores y normalizar nombres (alfabeto romano)
+                desarrolladores = [dev.strip().lower() for dev in str(row['By']).replace('&', ',').split(',') if dev.strip()] if pd.notna(row['By']) else ['null']
                 for dev in desarrolladores:
-                    dev_escaped = json.dumps(dev)  # Escapar caracteres especiales
-                    query_dev = f"MERGE (d:Desarrollador {{name: {dev_escaped}}})"
-                    run_query(query_dev)
+                    # Validar que el nombre del desarrollador esté en alfabeto romano
+                    if dev.isascii():
+                        dev_escaped = json.dumps(dev)  # Escapar caracteres especiales
+                        query_dev = f"MERGE (d:Desarrollador {{name: {dev_escaped}}})"
+                        run_query(query_dev)
 
-                    # Relacionar desarrollador con la aplicación
-                    query_rel = f"""
-                    MATCH (d:Desarrollador {{name: {dev_escaped}}}), (a:Aplicacion {{name: {nombre_app_escaped}}})
-                    CREATE (d)-[:CREA]->(a)
-                    """
-                    run_query(query_rel)
+                        # Relacionar desarrollador con la aplicación
+                        query_rel = f"""
+                        MATCH (d:Desarrollador {{name: {dev_escaped}}}), (a:Aplicacion {{name: {nombre_app_escaped}}})
+                        CREATE (d)-[:CREA]->(a)
+                        """
+                        run_query(query_rel)
 
-                # Crear nodos de Tecnologias
-                tecnologias = [tech.strip() for tech in str(row['Built With']).split(',')] if pd.notna(row['Built With']) else ['Null']
+                # Crear nodos de Tecnologias (una tecnología por nodo)
+                tecnologias = [tech.strip().lower() for tech in str(row['Built With']).split(',')] if pd.notna(row['Built With']) else ['null']
                 for tech in tecnologias:
-                    tech_escaped = json.dumps(tech)  # Escapar caracteres especiales
-                    query_tec = f"MERGE (t:Tecnologia {{name: {tech_escaped}}})"
+                    tech_escaped = json.dumps(tech)
+
+                    # Crear el nodo de la tecnología y la relación con la aplicación
+                    query_tec = f"""
+                    MERGE (t:Tecnologia {{name: {tech_escaped}}})
+                    """
                     run_query(query_tec)
 
-                    # Relacionar aplicación con la tecnología
+                    # Relacionar la aplicación con la tecnología
                     query_rel_tec = f"""
                     MATCH (a:Aplicacion {{name: {nombre_app_escaped}}}), (t:Tecnologia {{name: {tech_escaped}}})
                     CREATE (a)-[:USA]->(t)
@@ -243,19 +262,21 @@ def cargar_datos_csv():
                     run_query(query_rel_tec)
 
                 # Crear nodo Ubicacion y relacionarlo con el Desarrollador
-                ubicacion = str(row['Location']) if pd.notna(row['Location']) else 'Null'
+                ubicacion = str(row['Location']).lower() if pd.notna(row['Location']) else 'null'
                 ubicacion_escaped = json.dumps(ubicacion)  # Escapar caracteres especiales
                 query_ubicacion = f"MERGE (l:Ubicacion {{nombre: {ubicacion_escaped}}})"
                 run_query(query_ubicacion)
 
                 for dev in desarrolladores:
-                    query_rel_ubic = f"""
-                    MATCH (d:Desarrollador {{name: {dev_escaped}}}), (l:Ubicacion {{nombre: {ubicacion_escaped}}})
-                    CREATE (d)-[:UBICADO_EN]->(l)
-                    """
-                    run_query(query_rel_ubic)
+                    if dev.isascii():
+                        query_rel_ubic = f"""
+                        MATCH (d:Desarrollador {{name: {json.dumps(dev)}}}), (l:Ubicacion {{nombre: {ubicacion_escaped}}})
+                        CREATE (d)-[:UBICADO_EN]->(l)
+                        """
+                        run_query(query_rel_ubic)
 
             st.success("Datos cargados correctamente con nodos y relaciones.")
+
 
 
 def actualizar_aplicacion():
