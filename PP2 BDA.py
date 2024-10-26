@@ -255,25 +255,18 @@ def cargar_datos_csv():
                 # Normalización de nombres en alfabeto romano y manejo de mayúsculas
                 nombre_app = str(row['Title']).lower() if pd.notna(row['Title']) else 'null'
                 descripcion_app = str(row['What it Does']).lower() if pd.notna(row['What it Does']) else 'null'
-                subtitulo_app = str(row['Sub-Title']).lower() if pd.notna(row['Sub-Title']) else 'null'
-                youtube_link = str(row['YouTube Link']) if pd.notna(row['YouTube Link']) else 'null'
-                project_link = str(row['Project Link']) if pd.notna(row['Project Link']) else 'null'
+                
                 
                 # Escapar comillas y caracteres especiales 
                 nombre_app_escaped = json.dumps(nombre_app)
                 descripcion_app_escaped = json.dumps(descripcion_app)
-                subtitulo_app_escaped = json.dumps(subtitulo_app)
-                youtube_link_escaped = json.dumps(youtube_link)
-                project_link_escaped = json.dumps(project_link)
+
                 
                 # Crear nodo Aplicacion con todos los atributos relevantes
                 query_app = f"""
                 CREATE (a:Aplicacion {{
                     name: {nombre_app_escaped}, 
-                    descripcion: {descripcion_app_escaped},
-                    subtitulo: {subtitulo_app_escaped},
-                    youtube_link: {youtube_link_escaped},
-                    project_link: {project_link_escaped}
+                    descripcion: {descripcion_app_escaped}
                 }})
                 """
                 run_query(query_app)
