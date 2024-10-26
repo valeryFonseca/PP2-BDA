@@ -191,6 +191,24 @@ def aplicaciones_por_region():
             st.error("Por favor ingresa una región.")
 
 
+def limpiar_base_datos():
+    st.subheader("Eliminar Todo de la Base de Datos")
+    
+    if st.button("Eliminar Todos los Nodos y Relaciones"):
+        # Confirmación adicional antes de realizar la operación
+        confirmacion = st.radio("¿Estás seguro de eliminar todos los nodos y relaciones?", ("No", "Sí"))
+        
+        if confirmacion == "Sí":
+            try:
+                query = "MATCH (n) DETACH DELETE n"
+                run_query(query)
+                st.success("Base de datos limpiada por completo.")
+            except Exception as e:
+                st.error(f"Error al limpiar la base de datos: {str(e)}")
+        else:
+            st.info("Eliminación de todos los nodos y relaciones cancelada.")
+
+
 def cargar_datos_csv():
     st.subheader("Cargar Datos desde CSV")
     file = st.file_uploader("Sube un archivo CSV", type=["csv"])
@@ -893,6 +911,7 @@ def gestionar_relacion_desarrollada_en():
     elif seleccion_desarrollada_en == "Actualizar Relación 'DESARROLLADA_EN'":
         actualizar_relacion_desarrollada_en()
 
+
 # Integrar el submenú en la interfaz principal
 def main():
     st.title("Sistema de Gestión de Competencia Gemini - Neo4j")
@@ -900,7 +919,7 @@ def main():
     # Menú principal de la barra lateral con todas las opciones de CRUD y acciones
     menu_completo = [
         "Cargar datos desde CSV",
-        "Agregar Nueva Aplicación", 
+        "Agregar Aplicación", 
         "Leer Aplicaciones", 
         "Actualizar Aplicación", 
         "Eliminar Aplicación",
@@ -920,6 +939,7 @@ def main():
         "Relación 'CREA'", 
         "Relación 'UBICADO_EN'", 
         "Relación 'DESARROLLADA_EN'",
+        "Limpiar Base de Datos",  # Nueva opción agregada
         "Cerrar Conexión"
     ]
     
@@ -927,7 +947,7 @@ def main():
 
     if seleccion == "Cargar datos desde CSV":
         cargar_datos_csv()
-    elif seleccion == "Agregar Nueva Aplicación":
+    elif seleccion == "Agregar Aplicación":
         agregar_aplicacion()
     elif seleccion == "Leer Aplicaciones":
         listar_aplicaciones()
@@ -1012,6 +1032,8 @@ def main():
         gestionar_relacion_ubicado_en()
     elif seleccion == "Relación 'DESARROLLADA_EN'":
         gestionar_relacion_desarrollada_en()
+    elif seleccion == "Limpiar Base de Datos":  # Nueva opción agregada
+        limpiar_base_datos()
     elif seleccion == "Cerrar Conexión":
         cerrar_conexion()
 
