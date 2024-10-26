@@ -297,7 +297,68 @@ def listar_aplicaciones():
     else:
         st.warning("No se encontraron aplicaciones.")
 
+# Crea, lee, actualiza y elimana relacion USA
 
+def agregar_relacion_usa():
+    st.subheader("Agregar Relación 'USA' entre Aplicación y Tecnología")
+    nombre_app = st.text_input("Nombre de la Aplicación")
+    nombre_tec = st.text_input("Nombre de la Tecnología")
+    
+    if st.button("Agregar Relación"):
+        if nombre_app and nombre_tec:
+            query = f"""
+            MATCH (a:Aplicacion {{name: '{nombre_app}'}}), (t:Tecnologia {{name: '{nombre_tec}'}})
+            MERGE (a)-[:USA]->(t)
+            """
+            run_query(query)
+            st.success(f"Relación 'USA' entre '{nombre_app}' y '{nombre_tec}' agregada o actualizada con éxito.")
+        else:
+            st.error("Por favor ingresa el nombre de la aplicación y la tecnología.")
+
+def leer_relacion_usa():
+    st.subheader("Leer Relaciones 'USA' entre Aplicación y Tecnología")
+    nombre_aplicacion = st.text_input("Nombre de la Aplicación (dejar vacío para mostrar todas)")
+    
+    if nombre_aplicacion:
+        query = f"""
+        MATCH (a:Aplicacion {{name: '{nombre_aplicacion}'}})-[r:USA]->(t:Tecnologia)
+        RETURN DISTINCT a.name AS Aplicacion, t.name AS Tecnologia
+        """
+    else:
+        query = """
+        MATCH (a:Aplicacion)-[r:USA]->(t:Tecnologia)
+        WHERE a.name IS NOT NULL AND a.name <> "Null"
+        RETURN DISTINCT a.name AS Aplicacion, t.name AS Tecnologia
+        """
+
+    resultados = run_query(query)
+    
+    if resultados:
+        st.write("Relaciones 'USA' entre Aplicaciones y Tecnologías:")
+        for record in resultados:
+            st.write(f"Aplicación: {record['Aplicacion']}, Tecnología: {record['Tecnologia']}")
+    else:
+        st.warning("No se encontraron relaciones 'USA'.")
+
+
+
+def actualizar_relacion_usa():
+    st.subheader("Actualizar Relación 'USA' entre Aplicación y Tecnología")
+    nombre_app = st.text_input("Nombre de la Aplicación")
+    nombre_tec_anterior = st.text_input("Nombre de la Tecnología Anterior")
+    nombre_tec_nueva = st.text_input("Nuevo Nombre de la Tecnología")
+    
+    if st.button("Actualizar Relación 'USA'"):
+        if nombre_app and nombre_tec_anterior and nombre_tec_nueva:
+            query = f"""
+            MATCH (a:Aplicacion {{name: '{nombre_app}'}})-[r:USA]->(t:Tecnologia {{name: '{nombre_tec_anterior}'}})
+            DELETE r
+            CREATE (a)-[:USA]->(:Tecnologia {{name: '{nombre_tec_nueva}'}})
+            """
+            run_query(query)
+            st.success(f"Relación 'USA' actualizada de '{nombre_tec_anterior}' a '{nombre_tec_nueva}' con éxito.")
+        else:
+            st.error("Por favor ingresa todos los datos.")
 
 def eliminar_relacion_usa():
     st.subheader("Eliminar Relación 'USA'")
@@ -314,6 +375,246 @@ def eliminar_relacion_usa():
             st.success(f"Relación 'USA' entre '{nombre_app}' y '{nombre_tec}' eliminada con éxito.")
         else:
             st.error("Por favor ingresa tanto el nombre de la aplicación como el de la tecnología.")
+
+# Crea, lee, actualiza y elimana relacion CREA 
+
+def agregar_relacion_crea():
+    st.subheader("Agregar Relación 'CREA' entre Desarrollador y Aplicación")
+    nombre_dev = st.text_input("Nombre del Desarrollador")
+    nombre_app = st.text_input("Nombre de la Aplicación")
+    
+    if st.button("Agregar Relación"):
+        if nombre_dev and nombre_app:
+            query = f"""
+            MATCH (d:Desarrollador {{name: '{nombre_dev}'}}), (a:Aplicacion {{name: '{nombre_app}'}})
+            MERGE (d)-[:CREA]->(a)
+            """
+            run_query(query)
+            st.success(f"Relación 'CREA' entre '{nombre_dev}' y '{nombre_app}' agregada o actualizada con éxito.")
+        else:
+            st.error("Por favor ingresa el nombre del desarrollador y la aplicación.")
+
+
+def leer_relacion_crea():
+    st.subheader("Leer Relaciones 'CREA' entre Desarrollador y Aplicación")
+    nombre_desarrollador = st.text_input("Nombre del Desarrollador (dejar vacío para mostrar todas)")
+    
+    if nombre_desarrollador:
+        query = f"""
+        MATCH (d:Desarrollador {{name: '{nombre_desarrollador}'}})-[r:CREA]->(a:Aplicacion)
+        RETURN DISTINCT d.name AS Desarrollador, a.name AS Aplicacion
+        """
+    else:
+        query = """
+        MATCH (d:Desarrollador)-[r:CREA]->(a:Aplicacion)
+        WHERE d.name IS NOT NULL AND d.name <> "Null"
+        RETURN DISTINCT d.name AS Desarrollador, a.name AS Aplicacion
+        """
+
+    resultados = run_query(query)
+    
+    if resultados:
+        st.write("Relaciones 'CREA' entre Desarrolladores y Aplicaciones:")
+        for record in resultados:
+            st.write(f"Desarrollador: {record['Desarrollador']}, Aplicación: {record['Aplicacion']}")
+    else:
+        st.warning("No se encontraron relaciones 'CREA'.")
+
+
+
+def actualizar_relacion_crea():
+    st.subheader("Actualizar Relación 'CREA' entre Desarrollador y Aplicación")
+    nombre_dev = st.text_input("Nombre del Desarrollador")
+    nombre_app_anterior = st.text_input("Nombre de la Aplicación Anterior")
+    nombre_app_nueva = st.text_input("Nuevo Nombre de la Aplicación")
+    
+    if st.button("Actualizar Relación 'CREA'"):
+        if nombre_dev and nombre_app_anterior and nombre_app_nueva:
+            query = f"""
+            MATCH (d:Desarrollador {{name: '{nombre_dev}'}})-[r:CREA]->(a:Aplicacion {{name: '{nombre_app_anterior}'}})
+            DELETE r
+            CREATE (d)-[:CREA]->(:Aplicacion {{name: '{nombre_app_nueva}'}})
+            """
+            run_query(query)
+            st.success(f"Relación 'CREA' actualizada de '{nombre_app_anterior}' a '{nombre_app_nueva}' con éxito.")
+        else:
+            st.error("Por favor ingresa todos los datos.")
+
+def eliminar_relacion_crea():
+    st.subheader("Eliminar Relación 'CREA' entre Desarrollador y Aplicación")
+    nombre_dev = st.text_input("Nombre del Desarrollador")
+    nombre_app = st.text_input("Nombre de la Aplicación")
+    
+    if st.button("Eliminar Relación"):
+        if nombre_dev and nombre_app:
+            query = f"""
+            MATCH (d:Desarrollador {{name: '{nombre_dev}'}})-[r:CREA]->(a:Aplicacion {{name: '{nombre_app}'}})
+            DELETE r
+            """
+            run_query(query)
+            st.success(f"Relación 'CREA' entre '{nombre_dev}' y '{nombre_app}' eliminada con éxito.")
+        else:
+            st.error("Por favor ingresa el nombre del desarrollador y la aplicación.")
+
+# Crea, lee, actualiza y elimana relacion UBICADO_EN
+
+def agregar_relacion_ubicacion_en():
+    st.subheader("Agregar Relación 'UBICADO_EN' entre Desarrollador y Ubicación")
+    nombre_dev = st.text_input("Nombre del Desarrollador")
+    nombre_ubic = st.text_input("Nombre de la Ubicación")
+    
+    if st.button("Agregar Relación"):
+        if nombre_dev and nombre_ubic:
+            query = f"""
+            MATCH (d:Desarrollador {{name: '{nombre_dev}'}}), (l:Ubicacion {{nombre: '{nombre_ubic}'}})
+            MERGE (d)-[:UBICADO_EN]->(l)
+            """
+            run_query(query)
+            st.success(f"Relación 'UBICADO_EN' entre '{nombre_dev}' y '{nombre_ubic}' agregada o actualizada con éxito.")
+        else:
+            st.error("Por favor ingresa el nombre del desarrollador y la ubicación.")
+    
+
+def leer_relacion_ubicacion_en():
+    st.subheader("Leer Relaciones 'UBICADO_EN' entre Desarrollador y Ubicación")
+    nombre_desarrollador = st.text_input("Nombre del Desarrollador (dejar vacío para mostrar todas)")
+    
+    if nombre_desarrollador:
+        query = f"""
+        MATCH (d:Desarrollador {{name: '{nombre_desarrollador}'}})-[r:UBICADO_EN]->(l:Ubicacion)
+        RETURN DISTINCT d.name AS Desarrollador, l.nombre AS Ubicacion
+        """
+    else:
+        query = """
+        MATCH (d:Desarrollador)-[r:UBICADO_EN]->(l:Ubicacion)
+        WHERE d.name IS NOT NULL AND d.name <> "Null"
+        RETURN DISTINCT d.name AS Desarrollador, l.nombre AS Ubicacion
+        """
+
+    resultados = run_query(query)
+    
+    if resultados:
+        st.write("Relaciones 'UBICADO_EN' entre Desarrolladores y Ubicaciones:")
+        for record in resultados:
+            st.write(f"Desarrollador: {record['Desarrollador']}, Ubicación: {record['Ubicacion']}")
+    else:
+        st.warning("No se encontraron relaciones 'UBICADO_EN'.")
+
+
+def actualizar_relacion_ubicacion_en():
+    st.subheader("Actualizar Relación 'UBICADO_EN' entre Desarrollador y Ubicación")
+    nombre_desarrollador = st.text_input("Nombre del Desarrollador")
+    nombre_ubicacion_anterior = st.text_input("Nombre de la Ubicación Anterior")
+    nombre_ubicacion_nueva = st.text_input("Nuevo Nombre de la Ubicación")
+    
+    if st.button("Actualizar Relación 'UBICADO_EN'"):
+        if nombre_desarrollador and nombre_ubicacion_anterior and nombre_ubicacion_nueva:
+            query = f"""
+            MATCH (d:Desarrollador {{name: '{nombre_desarrollador}'}})-[r:UBICADO_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion_anterior}'}})
+            DELETE r
+            WITH d
+            MERGE (nueva_ubic:Ubicacion {{nombre: '{nombre_ubicacion_nueva}'}})
+            CREATE (d)-[:UBICADO_EN]->(nueva_ubic)
+            """
+            run_query(query)
+            st.success(f"Relación 'UBICADO_EN' actualizada de '{nombre_ubicacion_anterior}' a '{nombre_ubicacion_nueva}' con éxito.")
+        else:
+            st.error("Por favor ingresa todos los datos.")
+
+def eliminar_relacion_ubicacion_en():
+    st.subheader("Eliminar Relación 'UBICADO_EN' entre Desarrollador y Ubicación")
+    nombre_dev = st.text_input("Nombre del Desarrollador")
+    nombre_ubicacion = st.text_input("Nombre de la Ubicación")
+    
+    if st.button("Eliminar Relación"):
+        if nombre_dev and nombre_ubicacion:
+            query = f"""
+            MATCH (d:Desarrollador {{name: '{nombre_dev}'}})-[r:UBICADO_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion}'}})
+            DELETE r
+            """
+            run_query(query)
+            st.success(f"Relación 'UBICADO_EN' entre '{nombre_dev}' y '{nombre_ubicacion}' eliminada con éxito.")
+        else:
+            st.error("Por favor ingresa el nombre del desarrollador y la ubicación.")
+
+# Crea, lee, actualiza y elimana relacion DESARROLLADA_EN
+
+def agregar_relacion_desarrollada_en():
+    st.subheader("Agregar Relación 'DESARROLLADA_EN' entre Aplicación y Ubicación")
+    nombre_app = st.text_input("Nombre de la Aplicación")
+    nombre_ubic = st.text_input("Nombre de la Ubicación")
+    
+    if st.button("Agregar Relación"):
+        if nombre_app and nombre_ubic:
+            query = f"""
+            MATCH (a:Aplicacion {{name: '{nombre_app}'}}), (l:Ubicacion {{nombre: '{nombre_ubic}'}})
+            MERGE (a)-[:DESARROLLADA_EN]->(l)
+            """
+            run_query(query)
+            st.success(f"Relación 'DESARROLLADA_EN' entre '{nombre_app}' y '{nombre_ubic}' agregada o actualizada con éxito.")
+        else:
+            st.error("Por favor ingresa el nombre de la aplicación y la ubicación.")
+
+def leer_relacion_desarrollada_en():
+    st.subheader("Leer Relaciones 'DESARROLLADA_EN' entre Aplicación y Ubicación")
+    nombre_aplicacion = st.text_input("Nombre de la Aplicación (dejar vacío para mostrar todas)")
+    
+    if nombre_aplicacion:
+        query = f"""
+        MATCH (a:Aplicacion {{name: '{nombre_aplicacion}'}})-[r:DESARROLLADA_EN]->(l:Ubicacion)
+        RETURN DISTINCT a.name AS Aplicacion, l.nombre AS Ubicacion
+        """
+    else:
+        query = """
+        MATCH (a:Aplicacion)-[r:DESARROLLADA_EN]->(l:Ubicacion)
+        WHERE a.name IS NOT NULL AND a.name <> "Null"
+        RETURN DISTINCT a.name AS Aplicacion, l.nombre AS Ubicacion
+        """
+
+    resultados = run_query(query)
+    
+    if resultados:
+        st.write("Relaciones 'DESARROLLADA_EN' entre Aplicaciones y Ubicaciones:")
+        for record in resultados:
+            st.write(f"Aplicación: {record['Aplicacion']}, Ubicación: {record['Ubicacion']}")
+    else:
+        st.warning("No se encontraron relaciones 'DESARROLLADA_EN'.")
+
+
+# Actualizar Relación 'DESARROLLADA_EN'
+def actualizar_relacion_desarrollada_en():
+    st.subheader("Actualizar Relación 'DESARROLLADA_EN' entre Aplicación y Ubicación")
+    nombre_aplicacion = st.text_input("Nombre de la Aplicación")
+    nombre_ubicacion_anterior = st.text_input("Nombre de la Ubicación Anterior")
+    nombre_ubicacion_nueva = st.text_input("Nuevo Nombre de la Ubicación")
+    
+    if st.button("Actualizar Relación 'DESARROLLADA_EN'"):
+        if nombre_aplicacion and nombre_ubicacion_anterior and nombre_ubicacion_nueva:
+            query = f"""
+            MATCH (a:Aplicacion {{name: '{nombre_aplicacion}'}})-[r:DESARROLLADA_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion_anterior}'}})
+            DELETE r
+            CREATE (a)-[:DESARROLLADA_EN]->(:Ubicacion {{nombre: '{nombre_ubicacion_nueva}'}})
+            """
+            run_query(query)
+            st.success(f"Relación 'DESARROLLADA_EN' actualizada de '{nombre_ubicacion_anterior}' a '{nombre_ubicacion_nueva}' con éxito.")
+        else:
+            st.error("Por favor ingresa todos los datos.")
+
+def eliminar_relacion_desarrollada_en():
+    st.subheader("Eliminar Relación 'DESARROLLADA_EN' entre Aplicación y Ubicación")
+    nombre_app = st.text_input("Nombre de la Aplicación")
+    nombre_ubicacion = st.text_input("Nombre de la Ubicación")
+    
+    if st.button("Eliminar Relación"):
+        if nombre_app and nombre_ubicacion:
+            query = f"""
+            MATCH (a:Aplicacion {{name: '{nombre_app}'}})-[r:DESARROLLADA_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion}'}})
+            DELETE r
+            """
+            run_query(query)
+            st.success(f"Relación 'DESARROLLADA_EN' entre '{nombre_app}' y '{nombre_ubicacion}' eliminada con éxito.")
+        else:
+            st.error("Por favor ingresa el nombre de la aplicación y la ubicación.")
 
 
 def cerrar_conexion():
@@ -393,6 +694,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 # CRUD para Aplicación
 def crud_aplicacion():
     st.subheader("CRUD Aplicación")
@@ -498,6 +800,77 @@ def crud_tecnologia():
             run_query(query)
             st.success(f"Tecnología '{nombre_tec}' eliminada con éxito.")
 
+def crud_relaciones():
+    st.subheader("CRUD Relaciones entre Entidades")
+    
+    # Menú principal de relaciones
+    menu_relaciones = ["Relación 'USA'", "Relación 'CREA'", "Relación 'UBICADO_EN'", "Relación 'DESARROLLADA_EN'"]
+    seleccion_relacion = st.selectbox("Selecciona una Relación a Gestionar", menu_relaciones)
+    
+    if seleccion_relacion == "Relación 'USA'":
+        gestionar_relacion_usa()
+    elif seleccion_relacion == "Relación 'CREA'":
+        gestionar_relacion_crea()
+    elif seleccion_relacion == "Relación 'UBICADO_EN'":
+        gestionar_relacion_ubicado_en()
+    elif seleccion_relacion == "Relación 'DESARROLLADA_EN'":
+        gestionar_relacion_desarrollada_en()
+
+def gestionar_relacion_usa():
+    st.subheader("Gestión de Relación 'USA'")
+    acciones = ["Agregar Relación 'USA'", "Eliminar Relación 'USA'", "Leer Relación 'USA'", "Actualizar Relación 'USA'"]
+    seleccion_usa = st.selectbox("Selecciona una Acción para la Relación 'USA'", acciones)
+    
+    if seleccion_usa == "Agregar Relación 'USA'":
+        agregar_relacion_usa()
+    elif seleccion_usa == "Eliminar Relación 'USA'":
+        eliminar_relacion_usa()
+    elif seleccion_usa == "Leer Relación 'USA'":
+        leer_relacion_usa()
+    elif seleccion_usa == "Actualizar Relación 'USA'":
+        actualizar_relacion_usa()
+
+def gestionar_relacion_crea():
+    st.subheader("Gestión de Relación 'CREA'")
+    acciones = ["Agregar Relación 'CREA'", "Eliminar Relación 'CREA'", "Leer Relación 'CREA'", "Actualizar Relación 'CREA'"]
+    seleccion_crea = st.selectbox("Selecciona una Acción para la Relación 'CREA'", acciones)
+    
+    if seleccion_crea == "Agregar Relación 'CREA'":
+        agregar_relacion_crea()
+    elif seleccion_crea == "Eliminar Relación 'CREA'":
+        eliminar_relacion_crea()
+    elif seleccion_crea == "Leer Relación 'CREA'":
+        leer_relacion_crea()
+    elif seleccion_crea == "Actualizar Relación 'CREA'":
+        actualizar_relacion_crea()
+
+def gestionar_relacion_ubicado_en():
+    st.subheader("Gestión de Relación 'UBICADO_EN'")
+    acciones = ["Agregar Relación 'UBICADO_EN'", "Eliminar Relación 'UBICADO_EN'", "Leer Relación 'UBICADO_EN'", "Actualizar Relación 'UBICADO_EN'"]
+    seleccion_ubicado_en = st.selectbox("Selecciona una Acción para la Relación 'UBICADO_EN'", acciones)
+    
+    if seleccion_ubicado_en == "Agregar Relación 'UBICADO_EN'":
+        agregar_relacion_ubicacion_en()
+    elif seleccion_ubicado_en == "Eliminar Relación 'UBICADO_EN'":
+        eliminar_relacion_ubicacion_en()
+    elif seleccion_ubicado_en == "Leer Relación 'UBICADO_EN'":
+        leer_relacion_ubicacion_en()
+    elif seleccion_ubicado_en == "Actualizar Relación 'UBICADO_EN'":
+        actualizar_relacion_ubicacion_en()
+
+def gestionar_relacion_desarrollada_en():
+    st.subheader("Gestión de Relación 'DESARROLLADA_EN'")
+    acciones = ["Agregar Relación 'DESARROLLADA_EN'", "Eliminar Relación 'DESARROLLADA_EN'", "Leer Relación 'DESARROLLADA_EN'", "Actualizar Relación 'DESARROLLADA_EN'"]
+    seleccion_desarrollada_en = st.selectbox("Selecciona una Acción para la Relación 'DESARROLLADA_EN'", acciones)
+    
+    if seleccion_desarrollada_en == "Agregar Relación 'DESARROLLADA_EN'":
+        agregar_relacion_desarrollada_en()
+    elif seleccion_desarrollada_en == "Eliminar Relación 'DESARROLLADA_EN'":
+        eliminar_relacion_desarrollada_en()
+    elif seleccion_desarrollada_en == "Leer Relación 'DESARROLLADA_EN'":
+        leer_relacion_desarrollada_en()
+    elif seleccion_desarrollada_en == "Actualizar Relación 'DESARROLLADA_EN'":
+        actualizar_relacion_desarrollada_en()
 
 # Integrar el submenú en la interfaz principal
 def main():
@@ -508,6 +881,7 @@ def main():
         "CRUD Desarrollador", 
         "CRUD Ubicación", 
         "CRUD Tecnología",
+        "CRUD Relaciones"
     ]
     
     seleccion_principal = st.sidebar.selectbox("Selecciona una opción", menu_principal)
@@ -520,6 +894,8 @@ def main():
         crud_ubicacion()
     elif seleccion_principal == "CRUD Tecnología":
         crud_tecnologia()
+    elif seleccion_principal == "CRUD Relaciones":  
+        crud_relaciones()
 
 if __name__ == "__main__":
     main()
