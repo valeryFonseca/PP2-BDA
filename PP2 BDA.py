@@ -897,26 +897,123 @@ def gestionar_relacion_desarrollada_en():
 def main():
     st.title("Sistema de Gestión de Competencia Gemini - Neo4j")
     
-    menu_principal = [
-        "CRUD Aplicación", 
-        "CRUD Desarrollador", 
-        "CRUD Ubicación", 
-        "CRUD Tecnología",
-        "CRUD Relaciones"
+    # Menú principal de la barra lateral con todas las opciones de CRUD y acciones
+    menu_completo = [
+        "Cargar datos desde CSV",
+        "Agregar Nueva Aplicación", 
+        "Leer Aplicaciones", 
+        "Actualizar Aplicación", 
+        "Eliminar Aplicación",
+        "Crear Desarrollador", 
+        "Leer Desarrolladores", 
+        "Actualizar Desarrollador", 
+        "Eliminar Desarrollador",
+        "Crear Ubicación", 
+        "Leer Ubicaciones", 
+        "Actualizar Ubicación", 
+        "Eliminar Ubicación",
+        "Crear Tecnología", 
+        "Leer Tecnologías", 
+        "Actualizar Tecnología", 
+        "Eliminar Tecnología",
+        "Relación 'USA'", 
+        "Relación 'CREA'", 
+        "Relación 'UBICADO_EN'", 
+        "Relación 'DESARROLLADA_EN'",
+        "Cerrar Conexión"
     ]
     
-    seleccion_principal = st.sidebar.selectbox("Selecciona una opción", menu_principal)
-    
-    if seleccion_principal == "CRUD Aplicación":
-        crud_aplicacion()
-    elif seleccion_principal == "CRUD Desarrollador":
-        crud_desarrollador()
-    elif seleccion_principal == "CRUD Ubicación":
-        crud_ubicacion()
-    elif seleccion_principal == "CRUD Tecnología":
-        crud_tecnologia()
-    elif seleccion_principal == "CRUD Relaciones":  
-        crud_relaciones()
+    seleccion = st.sidebar.selectbox("Selecciona una opción", menu_completo)
+
+    if seleccion == "Cargar datos desde CSV":
+        cargar_datos_csv()
+    elif seleccion == "Agregar Nueva Aplicación":
+        agregar_aplicacion()
+    elif seleccion == "Leer Aplicaciones":
+        listar_aplicaciones()
+    elif seleccion == "Actualizar Aplicación":
+        actualizar_aplicacion()
+    elif seleccion == "Eliminar Aplicación":
+        eliminar_aplicacion()
+    elif seleccion == "Crear Desarrollador":
+        nombre_dev = st.text_input("Nombre del Desarrollador")
+        if st.button("Crear Desarrollador"):
+            query = f"CREATE (d:Desarrollador {{name: '{nombre_dev}'}})"
+            run_query(query)
+            st.success(f"Desarrollador '{nombre_dev}' creado con éxito.")
+    elif seleccion == "Leer Desarrolladores":
+        query = "MATCH (d:Desarrollador) RETURN d.name AS Nombre"
+        resultados = run_query(query)
+        st.write(pd.DataFrame(resultados))
+    elif seleccion == "Actualizar Desarrollador":
+        nombre_dev = st.text_input("Nombre del Desarrollador a actualizar")
+        nuevo_nombre = st.text_input("Nuevo nombre")
+        if st.button("Actualizar Desarrollador"):
+            query = f"MATCH (d:Desarrollador {{name: '{nombre_dev}'}}) SET d.name = '{nuevo_nombre}'"
+            run_query(query)
+            st.success(f"Desarrollador '{nombre_dev}' actualizado a '{nuevo_nombre}'")
+    elif seleccion == "Eliminar Desarrollador":
+        nombre_dev = st.text_input("Nombre del Desarrollador a eliminar")
+        if st.button("Eliminar Desarrollador"):
+            query = f"MATCH (d:Desarrollador {{name: '{nombre_dev}'}}) DELETE d"
+            run_query(query)
+            st.success(f"Desarrollador '{nombre_dev}' eliminado con éxito.")
+    elif seleccion == "Crear Ubicación":
+        nombre_ubic = st.text_input("Nombre de la Ubicación")
+        if st.button("Crear Ubicación"):
+            query = f"CREATE (l:Ubicacion {{nombre: '{nombre_ubic}'}})"
+            run_query(query)
+            st.success(f"Ubicación '{nombre_ubic}' creada con éxito.")
+    elif seleccion == "Leer Ubicaciones":
+        query = "MATCH (l:Ubicacion) RETURN l.nombre AS Nombre"
+        resultados = run_query(query)
+        st.write(pd.DataFrame(resultados))
+    elif seleccion == "Actualizar Ubicación":
+        nombre_ubic = st.text_input("Nombre de la Ubicación a actualizar")
+        nuevo_nombre = st.text_input("Nuevo nombre")
+        if st.button("Actualizar Ubicación"):
+            query = f"MATCH (l:Ubicacion {{nombre: '{nombre_ubic}'}}) SET l.nombre = '{nuevo_nombre}'"
+            run_query(query)
+            st.success(f"Ubicación '{nombre_ubic}' actualizada a '{nuevo_nombre}'")
+    elif seleccion == "Eliminar Ubicación":
+        nombre_ubic = st.text_input("Nombre de la Ubicación a eliminar")
+        if st.button("Eliminar Ubicación"):
+            query = f"MATCH (l:Ubicacion {{nombre: '{nombre_ubic}'}}) DELETE l"
+            run_query(query)
+            st.success(f"Ubicación '{nombre_ubic}' eliminada con éxito.")
+    elif seleccion == "Crear Tecnología":
+        nombre_tec = st.text_input("Nombre de la Tecnología")
+        if st.button("Crear Tecnología"):
+            query = f"CREATE (t:Tecnologia {{name: '{nombre_tec}'}})"
+            run_query(query)
+            st.success(f"Tecnología '{nombre_tec}' creada con éxito.")
+    elif seleccion == "Leer Tecnologías":
+        query = "MATCH (t:Tecnologia) RETURN t.name AS Nombre"
+        resultados = run_query(query)
+        st.write(pd.DataFrame(resultados))
+    elif seleccion == "Actualizar Tecnología":
+        nombre_tec = st.text_input("Nombre de la Tecnología a actualizar")
+        nuevo_nombre = st.text_input("Nuevo nombre")
+        if st.button("Actualizar Tecnología"):
+            query = f"MATCH (t:Tecnologia {{name: '{nombre_tec}'}}) SET t.name = '{nuevo_nombre}'"
+            run_query(query)
+            st.success(f"Tecnología '{nombre_tec}' actualizada a '{nuevo_nombre}'")
+    elif seleccion == "Eliminar Tecnología":
+        nombre_tec = st.text_input("Nombre de la Tecnología a eliminar")
+        if st.button("Eliminar Tecnología"):
+            query = f"MATCH (t:Tecnologia {{name: '{nombre_tec}'}}) DELETE t"
+            run_query(query)
+            st.success(f"Tecnología '{nombre_tec}' eliminada con éxito.")
+    elif seleccion == "Relación 'USA'":
+        gestionar_relacion_usa()
+    elif seleccion == "Relación 'CREA'":
+        gestionar_relacion_crea()
+    elif seleccion == "Relación 'UBICADO_EN'":
+        gestionar_relacion_ubicado_en()
+    elif seleccion == "Relación 'DESARROLLADA_EN'":
+        gestionar_relacion_desarrollada_en()
+    elif seleccion == "Cerrar Conexión":
+        cerrar_conexion()
 
 if __name__ == "__main__":
     main()
