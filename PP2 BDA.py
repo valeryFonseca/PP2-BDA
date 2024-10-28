@@ -966,6 +966,7 @@ def submenu_consultas():
     elif seleccion_consulta == "Aplicaciones por Región":
         aplicaciones_por_region()
 
+
 def submenu_operaciones():
     st.subheader("Operaciones de Base de Datos")
     opciones_operaciones = ["Cargar Datos desde CSV","Mostrar la Información", "Limpiar Base de Datos", "Cerrar Conexión"]
