@@ -291,13 +291,14 @@ def cargar_datos_csv():
                 descripcion_app = str(row['What it Does']).lower() if pd.notna(row['What it Does']) and row['What it Does'].strip() else None
 
                 # Crear nodo Aplicacion solo si hay nombre de la aplicación
+                # Crear o encontrar nodo Aplicacion
                 if nombre_app:
                     nombre_app_escaped = json.dumps(nombre_app)
                     descripcion_app_escaped = json.dumps(descripcion_app) if descripcion_app else "null"
-                    
+
                     query_app = f"""
-                    CREATE (a:Aplicacion {{
-                        name: {nombre_app_escaped}, 
+                    MERGE (a:Aplicacion {{
+                        name: {nombre_app_escaped},
                         descripcion: {descripcion_app_escaped}
                     }})
                     """
@@ -982,9 +983,28 @@ def submenu_operaciones():
         cerrar_conexion()
 
 
+def crear_indices():
+    """Crear índices en Neo4j para optimizar consultas."""
+    indices_queries = [
+        "CREATE INDEX IF NOT EXISTS FOR (a:Aplicacion) ON (a.name)",
+        "CREATE INDEX IF NOT EXISTS FOR (d:Desarrollador) ON (d.name)",
+        "CREATE INDEX IF NOT EXISTS FOR (l:Ubicacion) ON (l.nombre)",
+        "CREATE INDEX IF NOT EXISTS FOR (t:Tecnologia) ON (t.name)"
+    ]
+
+    try:
+        for query in indices_queries:
+            run_query(query)
+        st.success("Índices creados correctamente.")
+    except Exception as e:
+        st.error(f"Error al crear índices: {str(e)}")
+
+
 # Integrar el submenú en la interfaz principal
 def main():
     st.title("Sistema de Gestión de Competencia Gemini - Neo4j")
+
+    crear_indices()
     
     # Menú principal
     menu_principal = ["CRUDs", "Consultas", "Operaciones de Base de Datos"]
