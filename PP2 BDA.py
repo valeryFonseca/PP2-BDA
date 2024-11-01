@@ -199,7 +199,6 @@ def creadores_no_trabajaron_juntos():
 
 
 # Consulta 6: Listado de aplicaciones por región
-
 def aplicaciones_por_region():
     st.subheader("Aplicaciones por Región")
     region = st.text_input("Nombre de la Región")
@@ -207,7 +206,7 @@ def aplicaciones_por_region():
     if st.button("Buscar Aplicaciones"):
         if region:
             query = f"""
-            MATCH (l:Ubicacion {{nombre: '{region}'}})<-[:UBICADO_EN]-(d:Desarrollador)-[:CREA]->(a:Aplicacion)
+            MATCH (l:Ubicacion {{nombre: '{region}'}})<-[:DESARROLLADA_EN]-(a:Aplicacion)
             RETURN a.name AS Aplicacion, l.nombre AS Region
             """
             resultados = run_query(query)
@@ -290,7 +289,7 @@ def cargar_datos_csv():
                 nombre_app = str(row['Title']).lower() if pd.notna(row['Title']) and row['Title'].strip() else None
                 descripcion_app = str(row['What it Does']).lower() if pd.notna(row['What it Does']) and row['What it Does'].strip() else None
 
-                # Crear nodo Aplicacion solo si hay nombre de la aplicación
+
                 # Crear o encontrar nodo Aplicacion
                 if nombre_app:
                     nombre_app_escaped = json.dumps(nombre_app)
@@ -341,6 +340,13 @@ def cargar_datos_csv():
                         ubicacion_escaped = json.dumps(ubicacion)
                         query_ubicacion = f"MERGE (l:Ubicacion {{nombre: {ubicacion_escaped}}})"
                         run_query(query_ubicacion)
+
+                        # Relacionar la aplicación con la ubicación
+                        query_rel_ubicacion_app = f"""
+                        MATCH (a:Aplicacion {{name: {nombre_app_escaped}}}), (l:Ubicacion {{nombre: {ubicacion_escaped}}})
+                        CREATE (a)-[:DESARROLLADA_EN]->(l)
+                        """
+                        run_query(query_rel_ubicacion_app)
 
                         for dev in desarrolladores:
                             if dev.isascii():
