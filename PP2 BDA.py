@@ -570,14 +570,36 @@ def agregar_relacion_usa():
     
     if st.button("Agregar Relación"):
         if nombre_app and nombre_tec:
+            # Consulta para verificar la existencia de ambos nodos
             query = f"""
-            MATCH (a:Aplicacion {{name: '{nombre_app}'}}), (t:Tecnologia {{name: '{nombre_tec}'}})
-            MERGE (a)-[:USA]->(t)
+            MATCH (a:Aplicacion {{name: '{nombre_app}'}})
+            OPTIONAL MATCH (t:Tecnologia {{name: '{nombre_tec}'}})
+            RETURN a IS NOT NULL AS app_exists, t IS NOT NULL AS tec_exists
             """
-            run_query(query)
-            st.success(f"Relación 'USA' entre '{nombre_app}' y '{nombre_tec}' agregada o actualizada con éxito.")
+            resultado = run_query(query)
+            
+            # Validar la existencia de ambos nodos
+            if resultado:
+                app_exists = resultado[0]['app_exists']
+                tec_exists = resultado[0]['tec_exists']
+                
+                if app_exists and tec_exists:
+                    # Ambos nodos existen, crear la relación
+                    query_crear_relacion = f"""
+                    MATCH (a:Aplicacion {{name: '{nombre_app}'}}), (t:Tecnologia {{name: '{nombre_tec}'}})
+                    CREATE (a)-[:USA]->(t)
+                    """
+                    run_query(query_crear_relacion)
+                    st.success(f"Relación 'USA' entre '{nombre_app}' y '{nombre_tec}' agregada con éxito.")
+                elif not app_exists and not tec_exists:
+                    st.error(f"Ninguno de los nodos '{nombre_app}' ni '{nombre_tec}' existen.")
+                elif not app_exists:
+                    st.error(f"El nodo Aplicación '{nombre_app}' no existe.")
+                elif not tec_exists:
+                    st.error(f"El nodo Tecnología '{nombre_tec}' no existe.")
         else:
             st.error("Por favor ingresa el nombre de la aplicación y la tecnología.")
+
 
 def leer_relacion_usa():
     st.subheader("Leer Relaciones 'USA' entre Aplicación y Tecnología")
@@ -631,14 +653,27 @@ def eliminar_relacion_usa():
     
     if st.button("Eliminar Relación"):
         if nombre_app and nombre_tec:
-            query = f"""
+            # Validar existencia de la relación antes de eliminarla
+            query_existencia = f"""
             MATCH (a:Aplicacion {{name: '{nombre_app}'}})-[r:USA]->(t:Tecnologia {{name: '{nombre_tec}'}})
-            DELETE r
+            RETURN r IS NOT NULL AS existe
             """
-            run_query(query)
-            st.success(f"Relación 'USA' entre '{nombre_app}' y '{nombre_tec}' eliminada con éxito.")
+            resultado = run_query(query_existencia)
+            
+            if resultado and resultado[0]['existe']:
+                # Eliminar la relación
+                query_eliminar = f"""
+                MATCH (a:Aplicacion {{name: '{nombre_app}'}})-[r:USA]->(t:Tecnologia {{name: '{nombre_tec}'}})
+                DELETE r
+                """
+                run_query(query_eliminar)
+                st.success(f"Relación 'USA' entre '{nombre_app}' y '{nombre_tec}' eliminada con éxito.")
+            else:
+                st.warning(f"No existe la relación 'USA' entre '{nombre_app}' y '{nombre_tec}'.")
         else:
             st.error("Por favor ingresa tanto el nombre de la aplicación como el de la tecnología.")
+
+
 
 # Relacion CREA : 
 # Crea, lee, actualiza y elimana relacion CREA 
@@ -651,11 +686,29 @@ def agregar_relacion_crea():
     if st.button("Agregar Relación"):
         if nombre_dev and nombre_app:
             query = f"""
-            MATCH (d:Desarrollador {{name: '{nombre_dev}'}}), (a:Aplicacion {{name: '{nombre_app}'}})
-            MERGE (d)-[:CREA]->(a)
+            MATCH (d:Desarrollador {{name: '{nombre_dev}'}})
+            OPTIONAL MATCH (a:Aplicacion {{name: '{nombre_app}'}})
+            RETURN d IS NOT NULL AS dev_exists, a IS NOT NULL AS app_exists
             """
-            run_query(query)
-            st.success(f"Relación 'CREA' entre '{nombre_dev}' y '{nombre_app}' agregada o actualizada con éxito.")
+            resultado = run_query(query)
+            
+            if resultado:
+                dev_exists = resultado[0]['dev_exists']
+                app_exists = resultado[0]['app_exists']
+                
+                if dev_exists and app_exists:
+                    query_crear_relacion = f"""
+                    MATCH (d:Desarrollador {{name: '{nombre_dev}'}}), (a:Aplicacion {{name: '{nombre_app}'}})
+                    CREATE (d)-[:CREA]->(a)
+                    """
+                    run_query(query_crear_relacion)
+                    st.success(f"Relación 'CREA' entre '{nombre_dev}' y '{nombre_app}' agregada con éxito.")
+                elif not dev_exists and not app_exists:
+                    st.error(f"Ninguno de los nodos '{nombre_dev}' ni '{nombre_app}' existen.")
+                elif not dev_exists:
+                    st.error(f"El nodo Desarrollador '{nombre_dev}' no existe.")
+                elif not app_exists:
+                    st.error(f"El nodo Aplicación '{nombre_app}' no existe.")
         else:
             st.error("Por favor ingresa el nombre del desarrollador y la aplicación.")
 
@@ -712,14 +765,26 @@ def eliminar_relacion_crea():
     
     if st.button("Eliminar Relación"):
         if nombre_dev and nombre_app:
-            query = f"""
+            # Validar existencia de la relación antes de eliminarla
+            query_existencia = f"""
             MATCH (d:Desarrollador {{name: '{nombre_dev}'}})-[r:CREA]->(a:Aplicacion {{name: '{nombre_app}'}})
-            DELETE r
+            RETURN r IS NOT NULL AS existe
             """
-            run_query(query)
-            st.success(f"Relación 'CREA' entre '{nombre_dev}' y '{nombre_app}' eliminada con éxito.")
+            resultado = run_query(query_existencia)
+            
+            if resultado and resultado[0]['existe']:
+                # Eliminar la relación
+                query_eliminar = f"""
+                MATCH (d:Desarrollador {{name: '{nombre_dev}'}})-[r:CREA]->(a:Aplicacion {{name: '{nombre_app}'}})
+                DELETE r
+                """
+                run_query(query_eliminar)
+                st.success(f"Relación 'CREA' entre '{nombre_dev}' y '{nombre_app}' eliminada con éxito.")
+            else:
+                st.warning(f"No existe la relación 'CREA' entre '{nombre_dev}' y '{nombre_app}'.")
         else:
-            st.error("Por favor ingresa el nombre del desarrollador y la aplicación.")
+            st.error("Por favor ingresa tanto el nombre del desarrollador como el de la aplicación.")
+
 
 
 # Relacion UBICADO_EN:
@@ -732,14 +797,32 @@ def agregar_relacion_ubicacion_en():
     if st.button("Agregar Relación"):
         if nombre_dev and nombre_ubic:
             query = f"""
-            MATCH (d:Desarrollador {{name: '{nombre_dev}'}}), (l:Ubicacion {{nombre: '{nombre_ubic}'}})
-            MERGE (d)-[:UBICADO_EN]->(l)
+            MATCH (d:Desarrollador {{name: '{nombre_dev}'}})
+            OPTIONAL MATCH (l:Ubicacion {{nombre: '{nombre_ubic}'}})
+            RETURN d IS NOT NULL AS dev_exists, l IS NOT NULL AS ubic_exists
             """
-            run_query(query)
-            st.success(f"Relación 'UBICADO_EN' entre '{nombre_dev}' y '{nombre_ubic}' agregada o actualizada con éxito.")
+            resultado = run_query(query)
+            
+            if resultado:
+                dev_exists = resultado[0]['dev_exists']
+                ubic_exists = resultado[0]['ubic_exists']
+                
+                if dev_exists and ubic_exists:
+                    query_crear_relacion = f"""
+                    MATCH (d:Desarrollador {{name: '{nombre_dev}'}}), (l:Ubicacion {{nombre: '{nombre_ubic}'}})
+                    CREATE (d)-[:UBICADO_EN]->(l)
+                    """
+                    run_query(query_crear_relacion)
+                    st.success(f"Relación 'UBICADO_EN' entre '{nombre_dev}' y '{nombre_ubic}' agregada con éxito.")
+                elif not dev_exists and not ubic_exists:
+                    st.error(f"Ninguno de los nodos '{nombre_dev}' ni '{nombre_ubic}' existen.")
+                elif not dev_exists:
+                    st.error(f"El nodo Desarrollador '{nombre_dev}' no existe.")
+                elif not ubic_exists:
+                    st.error(f"El nodo Ubicación '{nombre_ubic}' no existe.")
         else:
             st.error("Por favor ingresa el nombre del desarrollador y la ubicación.")
-    
+
 
 def leer_relacion_ubicacion_en():
     st.subheader("Leer Relaciones 'UBICADO_EN' entre Desarrollador y Ubicación")
@@ -794,14 +877,25 @@ def eliminar_relacion_ubicacion_en():
     
     if st.button("Eliminar Relación"):
         if nombre_dev and nombre_ubicacion:
-            query = f"""
+            # Validar existencia de la relación antes de eliminarla
+            query_existencia = f"""
             MATCH (d:Desarrollador {{name: '{nombre_dev}'}})-[r:UBICADO_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion}'}})
-            DELETE r
+            RETURN r IS NOT NULL AS existe
             """
-            run_query(query)
-            st.success(f"Relación 'UBICADO_EN' entre '{nombre_dev}' y '{nombre_ubicacion}' eliminada con éxito.")
+            resultado = run_query(query_existencia)
+            
+            if resultado and resultado[0]['existe']:
+                # Eliminar la relación
+                query_eliminar = f"""
+                MATCH (d:Desarrollador {{name: '{nombre_dev}'}})-[r:UBICADO_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion}'}})
+                DELETE r
+                """
+                run_query(query_eliminar)
+                st.success(f"Relación 'UBICADO_EN' entre '{nombre_dev}' y '{nombre_ubicacion}' eliminada con éxito.")
+            else:
+                st.warning(f"No existe la relación 'UBICADO_EN' entre '{nombre_dev}' y '{nombre_ubicacion}'.")
         else:
-            st.error("Por favor ingresa el nombre del desarrollador y la ubicación.")
+            st.error("Por favor ingresa tanto el nombre del desarrollador como el de la ubicación.")
 
 # Crea, lee, actualiza y elimana relacion DESARROLLADA_EN
 
@@ -813,13 +907,32 @@ def agregar_relacion_desarrollada_en():
     if st.button("Agregar Relación"):
         if nombre_app and nombre_ubic:
             query = f"""
-            MATCH (a:Aplicacion {{name: '{nombre_app}'}}), (l:Ubicacion {{nombre: '{nombre_ubic}'}})
-            MERGE (a)-[:DESARROLLADA_EN]->(l)
+            MATCH (a:Aplicacion {{name: '{nombre_app}'}})
+            OPTIONAL MATCH (l:Ubicacion {{nombre: '{nombre_ubic}'}})
+            RETURN a IS NOT NULL AS app_exists, l IS NOT NULL AS ubic_exists
             """
-            run_query(query)
-            st.success(f"Relación 'DESARROLLADA_EN' entre '{nombre_app}' y '{nombre_ubic}' agregada o actualizada con éxito.")
+            resultado = run_query(query)
+            
+            if resultado:
+                app_exists = resultado[0]['app_exists']
+                ubic_exists = resultado[0]['ubic_exists']
+                
+                if app_exists and ubic_exists:
+                    query_crear_relacion = f"""
+                    MATCH (a:Aplicacion {{name: '{nombre_app}'}}), (l:Ubicacion {{nombre: '{nombre_ubic}'}})
+                    CREATE (a)-[:DESARROLLADA_EN]->(l)
+                    """
+                    run_query(query_crear_relacion)
+                    st.success(f"Relación 'DESARROLLADA_EN' entre '{nombre_app}' y '{nombre_ubic}' agregada con éxito.")
+                elif not app_exists and not ubic_exists:
+                    st.error(f"Ninguno de los nodos '{nombre_app}' ni '{nombre_ubic}' existen.")
+                elif not app_exists:
+                    st.error(f"El nodo Aplicación '{nombre_app}' no existe.")
+                elif not ubic_exists:
+                    st.error(f"El nodo Ubicación '{nombre_ubic}' no existe.")
         else:
             st.error("Por favor ingresa el nombre de la aplicación y la ubicación.")
+
 
 def leer_relacion_desarrollada_en():
     st.subheader("Leer Relaciones 'DESARROLLADA_EN' entre Aplicación y Ubicación")
@@ -873,14 +986,26 @@ def eliminar_relacion_desarrollada_en():
     
     if st.button("Eliminar Relación"):
         if nombre_app and nombre_ubicacion:
-            query = f"""
+            # Validar existencia de la relación antes de eliminarla
+            query_existencia = f"""
             MATCH (a:Aplicacion {{name: '{nombre_app}'}})-[r:DESARROLLADA_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion}'}})
-            DELETE r
+            RETURN r IS NOT NULL AS existe
             """
-            run_query(query)
-            st.success(f"Relación 'DESARROLLADA_EN' entre '{nombre_app}' y '{nombre_ubicacion}' eliminada con éxito.")
+            resultado = run_query(query_existencia)
+            
+            if resultado and resultado[0]['existe']:
+                # Eliminar la relación
+                query_eliminar = f"""
+                MATCH (a:Aplicacion {{name: '{nombre_app}'}})-[r:DESARROLLADA_EN]->(l:Ubicacion {{nombre: '{nombre_ubicacion}'}})
+                DELETE r
+                """
+                run_query(query_eliminar)
+                st.success(f"Relación 'DESARROLLADA_EN' entre '{nombre_app}' y '{nombre_ubicacion}' eliminada con éxito.")
+            else:
+                st.warning(f"No existe la relación 'DESARROLLADA_EN' entre '{nombre_app}' y '{nombre_ubicacion}'.")
         else:
-            st.error("Por favor ingresa el nombre de la aplicación y la ubicación.")
+            st.error("Por favor ingresa tanto el nombre de la aplicación como el de la ubicación.")
+
 
 def gestionar_relacion_usa():
     st.subheader("Gestión de Relación 'USA'")
