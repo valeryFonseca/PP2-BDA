@@ -289,18 +289,24 @@ def cargar_datos_csv():
                 nombre_app = str(row['Title']).lower() if pd.notna(row['Title']) and row['Title'].strip() else None
                 descripcion_app = str(row['What it Does']).lower() if pd.notna(row['What it Does']) and row['What it Does'].strip() else None
 
-
-                # Crear o encontrar nodo Aplicacion
+                # Crear o encontrar nodo Aplicacion (sin incluir descripcion si es None)
                 if nombre_app:
                     nombre_app_escaped = json.dumps(nombre_app)
-                    descripcion_app_escaped = json.dumps(descripcion_app) if descripcion_app else "null"
 
-                    query_app = f"""
-                    MERGE (a:Aplicacion {{
-                        name: {nombre_app_escaped},
-                        descripcion: {descripcion_app_escaped}
-                    }})
-                    """
+                    if descripcion_app:
+                        descripcion_app_escaped = json.dumps(descripcion_app)
+                        query_app = f"""
+                        MERGE (a:Aplicacion {{
+                            name: {nombre_app_escaped},
+                            descripcion: {descripcion_app_escaped}
+                        }})
+                        """
+                    else:
+                        query_app = f"""
+                        MERGE (a:Aplicacion {{
+                            name: {nombre_app_escaped}
+                        }})
+                        """
                     run_query(query_app)
 
                     # Crear nodos de Desarrolladores y normalizar nombres (alfabeto romano)
@@ -315,7 +321,7 @@ def cargar_datos_csv():
                                 # Relacionar desarrollador con la aplicación
                                 query_rel = f"""
                                 MATCH (d:Desarrollador {{name: {dev_escaped}}}), (a:Aplicacion {{name: {nombre_app_escaped}}})
-                                CREATE (d)-[:CREA]->(a)
+                                MERGE (d)-[:CREA]->(a)
                                 """
                                 run_query(query_rel)
 
@@ -330,11 +336,11 @@ def cargar_datos_csv():
                             # Relacionar la aplicación con la tecnología
                             query_rel_tec = f"""
                             MATCH (a:Aplicacion {{name: {nombre_app_escaped}}}), (t:Tecnologia {{name: {tech_escaped}}})
-                            CREATE (a)-[:USA]->(t)
+                            MERGE (a)-[:USA]->(t)
                             """
                             run_query(query_rel_tec)
 
-                    # Crear nodo Ubicacion y relacionarlo con el Desarrollador si hay ubicación
+                    # Crear nodo Ubicacion y relacionarlo con la Aplicación y Desarrollador si hay ubicación
                     if pd.notna(row['Location']) and row['Location'].strip():
                         ubicacion = str(row['Location']).lower()
                         ubicacion_escaped = json.dumps(ubicacion)
@@ -344,7 +350,7 @@ def cargar_datos_csv():
                         # Relacionar la aplicación con la ubicación
                         query_rel_ubicacion_app = f"""
                         MATCH (a:Aplicacion {{name: {nombre_app_escaped}}}), (l:Ubicacion {{nombre: {ubicacion_escaped}}})
-                        CREATE (a)-[:DESARROLLADA_EN]->(l)
+                        MERGE (a)-[:DESARROLLADA_EN]->(l)
                         """
                         run_query(query_rel_ubicacion_app)
 
@@ -352,7 +358,7 @@ def cargar_datos_csv():
                             if dev.isascii():
                                 query_rel_ubic = f"""
                                 MATCH (d:Desarrollador {{name: {json.dumps(dev)}}}), (l:Ubicacion {{nombre: {ubicacion_escaped}}})
-                                CREATE (d)-[:UBICADO_EN]->(l)
+                                MERGE (d)-[:UBICADO_EN]->(l)
                                 """
                                 run_query(query_rel_ubic)
 
@@ -360,7 +366,6 @@ def cargar_datos_csv():
 
 
 # "Cerrar Conexión"
-
 def cerrar_conexion():
     if st.session_state.neo4j_conn:
         st.session_state.neo4j_conn.close()
